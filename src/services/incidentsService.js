@@ -149,47 +149,6 @@ export class IncidentsService {
         }
     }
 
-    async saveCreatedImages(req) {
-        const lastId = await this.#generateIncidentCode();
-        try {
-            await prisma.t_imagenes.create(
-                {
-                    data: {
-                        rutaImagen: `/images/${req.file.filename}`,
-                        tipoImagen: false,
-                        idIncidencia: lastId
-                    }
-                }
-            )
-            this.#response = true;
-        } catch (error) {
-            console.log(error)
-            this.#response = false;
-        }
-        return this.#response;
-    }
-
-    async saveDiagnoseImages(req) {
-        const lastId = await this.#generateIncidentCode();
-        try {
-            await prisma.t_imagenes.create(
-                {
-                    data: {
-                        rutaImagen: `/images/${req.file.filename}`,
-                        tipoImagen: true,
-                        idIncidencia: lastId,
-                        idDiagnostico: await this.lastDiagnoseId()
-                    }
-                }
-            )
-            this.#response = true;
-        } catch (error) {
-            console.log(error)
-            this.#response = false;
-        }
-        return this.#response;
-    }
-
     async setIncidenceToTechnician(req) {
         try {
             await prisma.t_usuario_x_incidencia.create(
@@ -209,25 +168,24 @@ export class IncidentsService {
 
     async getIncidence(req) {
         try {
-            const incidence = await prisma.t_incidencias.findFirst(
+            const incidence = await prisma.incidents.findFirst(
                 {
                     where: {
-                        codigoIncidencia: req.query.idIncidence
+                        incident_id: req.query.incident_id
                     },
                     select: {
-                        codigoIncidencia: true,
-                        nombre: true,
-                        Estado: true,
-                        Prioridad: true,
-                        Categoria: true,
-                        Riesgo: true,
-                        Afectacion: true,
-                        fechaRegistro: true,
-                        costo: true,
-                        duracionGestion: true,
-                        lugarIncidencia: true,
-                        imagenes: true,
-                        diagnostico: true
+                        incident_id: true,
+                        name: true,
+                        status: true,
+                        priority: true,
+                        category: true,
+                        risk: true,
+                        effect: true,
+                        record_date: true,
+                        cost: true,
+                        time_to_solve: true,
+                        incident_place: true,
+                        diagnosis: true
                     },
 
                 }
@@ -241,33 +199,32 @@ export class IncidentsService {
     async updateCategoriesIncident(req) {
 
         try {
-            const updatedIncident = await prisma.t_incidencias.update({
+            const updatedIncident = await prisma.incidents.update({
                 where: {
-                    codigoIncidencia: req.params.codigoIncidencia
+                    incident_id: req.params.incident_id
                 },
                 data: {
-                    idEstado: parseInt(req.body.idEstado),
-                    idAfectacion: parseInt(req.body.idAfectacion),
-                    idRiesgo: parseInt(req.body.idRiesgo),
-                    idPrioridad: parseInt(req.body.idPrioridad),
+                    status_id: parseInt(req.body.status_id),
+                    effect_id: parseInt(req.body.effect_id),
+                    risk_id: parseInt(req.body.risk_id),
+                    prority_id: parseInt(req.body.prority_id),
                 }
             })
             return updatedIncident;
         } catch (error) {
-
             return this.#response = false;
         }
     }
 
     async gettingStatusFromIncidence(idIncidencia) {
         try {
-            const incidence = await prisma.t_incidencias.findFirst(
+            const incidence = await prisma.incidents.findFirst(
                 {
                     where: {
-                        codigoIncidencia: idIncidencia
+                        incident_id: incident_id
                     },
                     select: {
-                        Estado: true,
+                        status: true,
                     },
 
                 }
@@ -282,7 +239,7 @@ export class IncidentsService {
 
         try {
             console.log(object)
-            const newRecord = await prisma.t_bitacora_cambio_estado.create(
+            const newRecord = await prisma.log_change_status_incident.create(
                 {
                     data: {
                         ...object
@@ -301,21 +258,21 @@ export class IncidentsService {
 
     async changeStatusIncident(req) {
         try {
-            const currentlyStatus = await this.gettingStatusFromIncidence(req.params.codigoIncidencia);
-            const updateIncident = await prisma.t_incidencias.update({
+            const currentlyStatus = await this.gettingStatusFromIncidence(req.params.incident_id);
+            const updateIncident = await prisma.incidents.update({
                 where: {
-                    codigoIncidencia: req.params.codigoIncidencia
+                    incident_id: req.params.incident_id
                 },
                 data: {
-                    idEstado: parseInt(req.body.idEstado),
+                    status_id: parseInt(req.body.status_id),
                 }
             })
             await this.saveStatusBinnacle({
-                idIncidencia: req.params.codigoIncidencia,
-                fechaCambio: new Date().toISOString(),
-                idEstadoAnterior: currentlyStatus.Estado.id,
-                idEstadoActual: parseInt(req.body.idEstado),
-                idUsuario: req.body.idUsuario
+                incident_id: req.params.incident_id,
+                change_date: new Date().toISOString(),
+                previous_state: currentlyStatus.incident_status.id,
+                current_status: parseInt(req.body.current_status),
+                user_dni: req.body.user_dni
             })
             return updateIncident;
 
@@ -327,12 +284,12 @@ export class IncidentsService {
 
     async closeIncidence(req) {
         try {
-            const updateIncident = await prisma.t_incidencias.update({
+            const updateIncident = await prisma.incidents.update({
                 where: {
-                    codigoIncidencia: req.params.codigoIncidencia
+                    incidents_id: req.params.incidents_id
                 },
                 data: {
-                    justificacionCierre: req.body.justificacion,
+                    close_justification: req.body.close_justification,
                 }
             })
             return updateIncident;
@@ -344,20 +301,19 @@ export class IncidentsService {
 
     async getOneDiagnose(req) {
         try {
-            const diagnose = await prisma.t_diagnostico.findFirst({
+            const diagnosis = await prisma.diagnosis.findFirst({
                 where: {
-                    codigoDiagnostico: parseInt(req.params.codigoDiagnostico)
+                    diagnosis_id: parseInt(req.params.diagnosis_id)
                 }, select: {
-                    codigoDiagnostico: true,
-                    fechaDiagnostico: true,
-                    diagnostico: true,
-                    tiempoEstimado: true,
-                    observacion: true,
-                    compra: true,
-                    imagenes: true
+                    diagnosis_id: true,
+                    diagnosis_date: true,
+                    diagnosis: true,
+                    estimated_time: true,
+                    observation: true,
+                    buy: true,
                 }
             })
-            return diagnose;
+            return diagnosis;
         } catch (error) {
             console.log(error)
             return this.#response = false;
@@ -366,12 +322,12 @@ export class IncidentsService {
 
     async setCost(req) {
         try {
-            const updateIncident = await prisma.t_incidencias.update({
+            const updateIncident = await prisma.incidents.update({
                 where: {
-                    codigoIncidencia: req.params.codigoIncidencia
+                    incident_id: req.params.incident_id
                 },
                 data: {
-                    costo: parseInt(req.body.costo),
+                    cost: parseInt(req.body.cost),
                 }
             })
             return updateIncident;
@@ -385,48 +341,16 @@ export class IncidentsService {
         try {
             const updateIncident = await prisma.t_incidencias.update({
                 where: {
-                    codigoIncidencia: req.params.codigoIncidencia
+                    incident_id: req.params.incident_id
                 },
                 data: {
-                    justificacionCierre: req.body.close,
+                    close_justification: req.body.close_justification,
                 }
             })
 
             return updateIncident;
         } catch (error) {
             console.log(error)
-            return this.#response = false;
-        }
-    }
-
-    async chargeWorkReport() {
-        try {
-            const result = await prisma.$queryRaw`
-            SELECT 
-    CONCAT(t_usuarios.ct_nombre, " ", t_usuarios.ct_apellido_uno, " ", t_usuarios.ct_apellido_dos) AS "nombre", 
-    SUM(CASE 
-            WHEN t_incidencias.cn_id_estado != 10 
-            THEN t_incidencias.cn_duracion_gestion 
-            ELSE 0 
-        END) AS "horasPendientes",
-    SUM(CASE 
-            WHEN t_incidencias.cn_id_estado = 10 
-            THEN t_incidencias.cn_duracion_gestion 
-            ELSE 0 
-        END) AS "horasTerminadas",
-    t_categorias.ct_description AS "description"
-FROM 
-    t_usuario_x_incidencia 
-INNER JOIN 
-    t_incidencias ON t_usuario_x_incidencia.ct_codigo_incidencia = t_incidencias.ct_codigo_incidencia
-INNER JOIN 
-    t_usuarios ON t_usuarios.ct_cedula = t_usuario_x_incidencia.ct_cedula_usuario
-INNER JOIN 
-	t_categorias ON t_categorias.cn_id_categoria = t_incidencias.cn_id_categoria
-GROUP BY 
-	t_incidencias.cn_id_categoria;`
-    return result   
-        } catch (error) {
             return this.#response = false;
         }
     }
