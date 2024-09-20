@@ -5,13 +5,13 @@ export class IncidentsService {
     #response = false;
 
     async #generateIncidentCode() {
-        const lastIncident = await prisma.t_incidencias.findFirst({
+        const lastIncident = await prisma.incidents.findFirst({
             orderBy: {
-                fechaRegistro: 'desc'
+                record_date: 'desc'
             }
         })
 
-        return lastIncident.codigoIncidencia
+        return lastIncident.incident_id
     }
 
     async last() {
@@ -30,21 +30,21 @@ export class IncidentsService {
     }
 
     async lastDiagnoseId() {
-        const lastId = await prisma.t_diagnostico.findFirst({
+        const lastId = await prisma.diagnosis.findFirst({
             orderBy: {
-                fechaDiagnostico: 'desc'
+                diagnosis_date: 'desc'
             }
         })
-        return lastId.codigoDiagnostico;
+        return lastId.diagnosis_id;
     }
 
     async createIncident(req) {
         try {
-            await prisma.t_incidencias.create({
+            await prisma.incidents.create({
                 data: {
                     ...req.body,
-                    codigoIncidencia: await this.last(),
-                    fechaRegistro: new Date().toISOString()
+                    incident_id: await this.last(),
+                    record_date: new Date().toISOString()
                 }
             })
             this.#response = true;
@@ -58,12 +58,12 @@ export class IncidentsService {
 
     async diagnoseIncidence(req) {
         try {
-            await prisma.t_diagnostico.create({
+            await prisma.diagnosis.create({
                 data: {
                     ...req.body,
-                    idIncidencia: req.query.incidentId,
-                    tiempoEstimado: parseInt(req.body.tiempoEstimado),
-                    fechaDiagnostico: new Date().toISOString()
+                    incident_id: req.query.incidentId,
+                    estimated_time: parseInt(req.body.tiempoEstimado),
+                    diagnosis_date: new Date().toISOString()
                 }
             })
             this.#response = true;
@@ -77,27 +77,27 @@ export class IncidentsService {
     async getIncidences(req) {
         try {
             let incidences = []
-            if(req.query.idUsuario==""){
-                incidences = await prisma.t_incidencias.findMany(
+            if(req.query.user_dni==""){
+                incidences = await prisma.incidents.findMany(
                     {
                         where: {
-                            idUsuario: req.query.idUsuario
+                            user_dni: req.query.idUsuario
                         },
                         select: {
-                            codigoIncidencia: true,
-                            nombre: true,
-                            Estado: true
+                            incident_id: true,
+                            name: true,
+                            status: true
                         },
     
                     }
                 );
             }else{
-                incidences = await prisma.t_incidencias.findMany(
+                incidences = await prisma.incidents.findMany(
                     {
                         select: {
-                            codigoIncidencia: true,
-                            nombre: true,
-                            Estado: true
+                            incident_id: true,
+                            name: true,
+                            status: true
                         },
     
                     }
@@ -115,30 +115,30 @@ export class IncidentsService {
         try {
             let incidences = {};
             
-            if (req.query.rol == 2) {
-                incidences = await prisma.t_incidencias.findMany(
+            if (req.query.rol_id == 2) { // it was named rol
+                incidences = await prisma.incidents.findMany(
                     {
                         where: {
-                            idEstado: {
+                            status_id: {
                                 not: 10
                             }
                         },
                         select: {
-                            codigoIncidencia: true,
-                            nombre: true,
-                            Estado: true
+                            incident_id: true,
+                            name: true,
+                            status: true
                         },
 
                     }
                 );
-            } else if (req.query.rol == 4) {
+            } else if (req.query.rol_id == 4) {
                 
-                incidences = await prisma.t_incidencias.findMany(
+                incidences = await prisma.incidents.findMany(
                     {
                         select: {
-                            codigoIncidencia: true,
-                            nombre: true,
-                            Estado: true
+                            incident_id: true,
+                            name: true,
+                            status: true
                         },
                     }
                 );
@@ -149,54 +149,17 @@ export class IncidentsService {
         }
     }
 
-    async saveCreatedImages(req) {
-        const lastId = await this.#generateIncidentCode();
-        try {
-            await prisma.t_imagenes.create(
-                {
-                    data: {
-                        rutaImagen: `/images/${req.file.filename}`,
-                        tipoImagen: false,
-                        idIncidencia: lastId
-                    }
-                }
-            )
-            this.#response = true;
-        } catch (error) {
-            console.log(error)
-            this.#response = false;
-        }
-        return this.#response;
-    }
 
-    async saveDiagnoseImages(req) {
-        const lastId = await this.#generateIncidentCode();
-        try {
-            await prisma.t_imagenes.create(
-                {
-                    data: {
-                        rutaImagen: `/images/${req.file.filename}`,
-                        tipoImagen: true,
-                        idIncidencia: lastId,
-                        idDiagnostico: await this.lastDiagnoseId()
-                    }
-                }
-            )
-            this.#response = true;
-        } catch (error) {
-            console.log(error)
-            this.#response = false;
-        }
-        return this.#response;
-    }
 
-    async setIncidenceToTechnician(req) {
+
+
+    async setIncidenceToTechnician(req) { // END MY WORK
         try {
-            await prisma.t_usuario_x_incidencia.create(
+            await prisma.user_x_incident.create(
                 {
                     data: {
                         ...req.body,
-                        fechaAsignacion: new Date().toISOString()
+                        assign_dateMa: new Date().toISOString()
                     }
                 }
             )
@@ -399,35 +362,5 @@ export class IncidentsService {
         }
     }
 
-    async chargeWorkReport() {
-        try {
-            const result = await prisma.$queryRaw`
-            SELECT 
-    CONCAT(t_usuarios.ct_nombre, " ", t_usuarios.ct_apellido_uno, " ", t_usuarios.ct_apellido_dos) AS "nombre", 
-    SUM(CASE 
-            WHEN t_incidencias.cn_id_estado != 10 
-            THEN t_incidencias.cn_duracion_gestion 
-            ELSE 0 
-        END) AS "horasPendientes",
-    SUM(CASE 
-            WHEN t_incidencias.cn_id_estado = 10 
-            THEN t_incidencias.cn_duracion_gestion 
-            ELSE 0 
-        END) AS "horasTerminadas",
-    t_categorias.ct_description AS "description"
-FROM 
-    t_usuario_x_incidencia 
-INNER JOIN 
-    t_incidencias ON t_usuario_x_incidencia.ct_codigo_incidencia = t_incidencias.ct_codigo_incidencia
-INNER JOIN 
-    t_usuarios ON t_usuarios.ct_cedula = t_usuario_x_incidencia.ct_cedula_usuario
-INNER JOIN 
-	t_categorias ON t_categorias.cn_id_categoria = t_incidencias.cn_id_categoria
-GROUP BY 
-	t_incidencias.cn_id_categoria;`
-    return result   
-        } catch (error) {
-            return this.#response = false;
-        }
-    }
+  
 }
