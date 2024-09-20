@@ -8,15 +8,13 @@ const options = {
         openapi: "3.0.0",
         info: { title: "SGI API", version: "1.0.0" }
     },
-    apis: ["src/routes/incidents.routes.js", "src/routes/users.routes.js"]
+    apis: ["src/incidents.yml"]
 }
 
 //DOC Json format
 const swaggerSpec = swaggerJSDoc(options);
 
 // function to setup our docs
-
-
 routerDocs.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 routerDocs.get('/docs.json', (req, res) => {
     res.setHeader('Content-Type', 'application/json');

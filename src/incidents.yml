@@ -1,0 +1,203 @@
+openapi: 3.0.3
+info:
+  title: SGI API Documentation 3.0
+  version: 1.0.11
+servers:
+  - url: http://api.sgi.example.com
+tags:
+  - name: Incidents
+    description: Operations with incidents
+paths:
+  /api/incidents/create:
+    post:
+      summary: Create a new incident
+      tags: [Incidents]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Incidents'
+      responses:
+        200:
+          description: New incident created!
+  /api/incidents:
+    get:
+      summary: Get all incidents
+      tags: [Incidents]
+      parameters:
+        - in: query
+          name: rol
+          schema:
+            type: integer
+          description: Role of the user to validate authorization
+      responses:
+        200:
+          description: All incidents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AllIncidents'
+  /api/incidents/byUser:
+    get:
+      summary: Get all user incidents
+      tags: [Incidents]
+      parameters:
+        - in: query
+          name: idUsuario
+          schema:
+            type: string
+          description: ID of the user to filter incidents
+      responses:
+        200:
+          description: All incidents by user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/IncidencesByUser'
+  /api/incidents/one:
+    get:
+      summary: Get one incident
+      tags: [Incidents]
+      parameters:
+        - in: query
+          name: codigoIncidencia
+          schema:
+            type: string
+          description: Code of the incident
+      responses:
+        200:
+          description: Incident by code
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OneIncident'
+  /api/incidents/diagnose:
+    post:
+      summary: Diagnosing an incident
+      tags: [Incidents]
+      parameters:
+        - in: query
+          name: incidentId
+          schema:
+            type: string
+          description: Code of the incident
+      responses:
+        200:
+          description: Diagnostic for the incident
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiagnoseIncident'
+
+components:
+  schemas:
+    Incidents:
+      type: object
+      properties:
+        nombre:
+          type: string
+          description: The incident name
+        description:
+          type: string
+        lugarIncidencia:
+          type: string
+        idUsuario:
+          type: string
+        idEstado:
+          type: integer
+        justificacionCierre:
+          type: string
+        costo:
+          type: number
+        duracionGestion:
+          type: integer
+        idAfectacion:
+          type: integer
+        idRiesgo:
+          type: integer
+        idCategoria:
+          type: integer
+        idPrioridad:
+          type: integer
+      required:
+        - nombre
+        - description
+        - lugarIncidencia
+        - idUsuario
+        - idEstado
+        - justificacionCierre
+        - costo
+        - duracionGestion
+        - idAfectacion
+        - idRiesgo
+        - idCategoria
+        - idPrioridad
+      example:
+        nombre: Tuberia dañada  
+        description: Daño de impresora, no imprime
+        lugarIncidencia: SGI
+        idUsuario: 70266019113
+        idEstado: 1
+        justificacionCierre: ""
+        costo: 0
+        duracionGestion: 0
+        idAfectacion: 1
+        idRiesgo: 1
+        idCategoria: 1
+        idPrioridad: 1
+    AllIncidents:
+      type: object
+      properties:
+        rol:
+          type: number
+          description: User role
+      required:
+        - rol
+      example:
+        rol: 2
+    IncidencesByUser:
+      type: object
+      properties:
+        idUsuario:
+          type: string
+          description: User ID
+      required:
+        - idUsuario
+      example:
+        idUsuario: "702660192"
+    OneIncident:
+      type: object
+      properties:
+        codigoIncidencia:
+          type: string
+          description: Incident code
+      required:
+        - codigoIncidencia
+      example:
+        codigoIncidencia: "2024-000001"
+    DiagnoseIncident:
+      type: object
+      properties:
+        incidentId:
+          type: string
+          description: Incident code
+        fechaDiagnostico:
+          type: string
+          description: Date of the diagnostic
+        diagnostico:
+          type: string
+          description: Diagnose
+      required:
+        - incidentId
+      example:
+        fechaDiagnostico: 2024-09-17T00:00:00.000Z
+        diagnostico: Diagnóstico del paciente
+        tiempoEstimado: 30
+        observacion: Observación sobre el diagnóstico
+        compra: true
+        idUsuario: 12345678901

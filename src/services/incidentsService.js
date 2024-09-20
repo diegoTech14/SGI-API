@@ -1,4 +1,3 @@
-import { connect } from "http2";
 import { prisma } from "../db.js";
 
 export class IncidentsService {
@@ -48,7 +47,6 @@ export class IncidentsService {
                     fechaRegistro: new Date().toISOString()
                 }
             })
-            console.log(req.body)
             this.#response = true;
         } catch (error) {
             console.log(error)
@@ -63,6 +61,7 @@ export class IncidentsService {
             await prisma.t_diagnostico.create({
                 data: {
                     ...req.body,
+                    idIncidencia: req.query.incidentId,
                     tiempoEstimado: parseInt(req.body.tiempoEstimado),
                     fechaDiagnostico: new Date().toISOString()
                 }
@@ -415,7 +414,7 @@ export class IncidentsService {
             THEN t_incidencias.cn_duracion_gestion 
             ELSE 0 
         END) AS "horasTerminadas",
-    t_categorias.ct_descripcion AS "descripcion"
+    t_categorias.ct_description AS "description"
 FROM 
     t_usuario_x_incidencia 
 INNER JOIN 

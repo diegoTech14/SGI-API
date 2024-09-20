@@ -14,7 +14,7 @@ export class UsersService {
 
     async #generateToken(userData) {
         const { cedula, nombre } = userData;
-        const rol = await prisma.t_usuarios_x_rol.findFirst(
+        const rol = await prisma.user_x_incident.findFirst(
             {
                 where: {
                     userId: cedula
@@ -162,7 +162,7 @@ SELECT
         let response = false;
         try {
             const results = await prisma.$queryRaw`
-            SELECT COUNT(ct_cedula),cn_id_rol   FROM t_usuarios_x_rol GROUP BY cn_id_rol;`;
+            SELECT COUNT(ct_cedula),cn_id_rol   FROM user_x_incident GROUP BY cn_id_rol;`;
             return results;
         } catch (error) {
             response = false;
