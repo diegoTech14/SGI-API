@@ -149,11 +149,7 @@ export class IncidentsService {
         }
     }
 
-
-
-
-
-    async setIncidenceToTechnician(req) { // END MY WORK
+    async setIncidenceToTechnician(req) {
         try {
             await prisma.user_x_incident.create(
                 {
@@ -172,30 +168,29 @@ export class IncidentsService {
 
     async getIncidence(req) {
         try {
-            const incidence = await prisma.t_incidencias.findFirst(
+            const incident = await prisma.incidents.findFirst(
                 {
                     where: {
-                        codigoIncidencia: req.query.idIncidence
+                        incident_id: req.query.incident_id
                     },
                     select: {
-                        codigoIncidencia: true,
-                        nombre: true,
-                        Estado: true,
-                        Prioridad: true,
-                        Categoria: true,
-                        Riesgo: true,
-                        Afectacion: true,
-                        fechaRegistro: true,
-                        costo: true,
-                        duracionGestion: true,
-                        lugarIncidencia: true,
-                        imagenes: true,
-                        diagnostico: true
+                        incident_id: true,
+                        name: true,
+                        status: true,
+                        priority: true,
+                        category: true,
+                        risk: true,
+                        effect: true,
+                        record_date: true,
+                        cost: true,
+                        time_to_solve: true,
+                        incident_place: true,
+                        diagnosis: true
                     },
 
                 }
             );
-            return incidence;
+            return incident;
         } catch (error) {
             return this.#response = false;
         }
@@ -204,15 +199,15 @@ export class IncidentsService {
     async updateCategoriesIncident(req) {
 
         try {
-            const updatedIncident = await prisma.t_incidencias.update({
+            const updatedIncident = await prisma.incidents.update({
                 where: {
-                    codigoIncidencia: req.params.codigoIncidencia
+                    incident_id: req.params.incident_id
                 },
                 data: {
-                    idEstado: parseInt(req.body.idEstado),
-                    idAfectacion: parseInt(req.body.idAfectacion),
-                    idRiesgo: parseInt(req.body.idRiesgo),
-                    idPrioridad: parseInt(req.body.idPrioridad),
+                    status_id: parseInt(req.body.status_id),
+                    effect_id: parseInt(req.body.effect_id),
+                    risk_id: parseInt(req.body.risk_id),
+                    prority_id: parseInt(req.body.priority_id),
                 }
             })
             return updatedIncident;
@@ -224,18 +219,18 @@ export class IncidentsService {
 
     async gettingStatusFromIncidence(idIncidencia) {
         try {
-            const incidence = await prisma.t_incidencias.findFirst(
+            const incident = await prisma.incidents.findFirst(
                 {
                     where: {
-                        codigoIncidencia: idIncidencia
+                        incident_id: incident_id
                     },
                     select: {
-                        Estado: true,
+                        status: true,
                     },
 
                 }
             );
-            return incidence;
+            return incident;
         } catch (error) {
             return this.#response = false;
         }
@@ -244,19 +239,15 @@ export class IncidentsService {
     async saveStatusBinnacle(object) {
 
         try {
-            console.log(object)
-            const newRecord = await prisma.t_bitacora_cambio_estado.create(
+            const new_log = await prisma.log_change_status_incident.create(
                 {
                     data: {
                         ...object
                     }
                 }
             )
-            console.log("eee: ", newRecord)
-            this.#response = true;
-            return newRecord
+            return new_log
         } catch (error) {
-            console.log(error)
             this.#response = false;
         }
         return this.#response;
@@ -264,100 +255,94 @@ export class IncidentsService {
 
     async changeStatusIncident(req) {
         try {
-            const currentlyStatus = await this.gettingStatusFromIncidence(req.params.codigoIncidencia);
-            const updateIncident = await prisma.t_incidencias.update({
+            const currentlyStatus = await this.gettingStatusFromIncidence(req.params.incident_id);
+            const updateIncident = await prisma.incidents.update({
                 where: {
-                    codigoIncidencia: req.params.codigoIncidencia
+                    incident_id: req.params.incident_id
                 },
                 data: {
-                    idEstado: parseInt(req.body.idEstado),
+                    status_id: parseInt(req.body.status_id),
                 }
             })
             await this.saveStatusBinnacle({
-                idIncidencia: req.params.codigoIncidencia,
-                fechaCambio: new Date().toISOString(),
-                idEstadoAnterior: currentlyStatus.Estado.id,
-                idEstadoActual: parseInt(req.body.idEstado),
-                idUsuario: req.body.idUsuario
+                incident_id: req.params.incident_id,
+                change_date: new Date().toISOString(),
+                previous_state: currentlyStatus.Estado.previous_state,
+                current_state: parseInt(req.body.current_state),
+                user_dni: req.body.user_dni
             })
             return updateIncident;
 
         } catch (error) {
-            console.log(error)
             return this.#response = false;
         }
     }
 
     async closeIncidence(req) {
         try {
-            const updateIncident = await prisma.t_incidencias.update({
+            const updateIncident = await prisma.incidents.update({
                 where: {
-                    codigoIncidencia: req.params.codigoIncidencia
+                    incident_id: req.params.incident_id
                 },
                 data: {
-                    justificacionCierre: req.body.justificacion,
+                    close_justification: req.body.close_justification,
                 }
             })
             return updateIncident;
         } catch (error) {
-            console.log(error)
             return this.#response = false;
         }
     }
 
     async getOneDiagnose(req) {
         try {
-            const diagnose = await prisma.t_diagnostico.findFirst({
+            const diagnosis = await prisma.diagnosis.findFirst({
                 where: {
-                    codigoDiagnostico: parseInt(req.params.codigoDiagnostico)
+                    diagnosis_id: parseInt(req.params.diagnosis_id)
                 }, select: {
-                    codigoDiagnostico: true,
-                    fechaDiagnostico: true,
-                    diagnostico: true,
-                    tiempoEstimado: true,
-                    observacion: true,
-                    compra: true,
-                    imagenes: true
+                    diagnosis_id: true,
+                    diagnosis_date: true,
+                    diagnosis: true,
+                    estimated_time: true,
+                    observation: true,
+                    buy: true
                 }
             })
-            return diagnose;
+            return diagnosis;
         } catch (error) {
-            console.log(error)
             return this.#response = false;
         }
     }
 
     async setCost(req) {
         try {
-            const updateIncident = await prisma.t_incidencias.update({
+            const updatedIncident = await prisma.incidents.update({
                 where: {
-                    codigoIncidencia: req.params.codigoIncidencia
+                    incident_id: req.params.incident_id
                 },
                 data: {
-                    costo: parseInt(req.body.costo),
+                    cost: parseInt(req.body.cost),
                 }
             })
-            return updateIncident;
+            return updatedIncident;
         } catch (error) {
-            console.log(error)
             return this.#response = false;
         }
     }
 
     async closeIncidence(req) {
         try {
-            const updateIncident = await prisma.t_incidencias.update({
+            const closedIncident = await prisma.incidents.update({
                 where: {
-                    codigoIncidencia: req.params.codigoIncidencia
+                    incident_id: req.params.incident_id
                 },
                 data: {
-                    justificacionCierre: req.body.close,
+                    close_justification: req.body.close_justification,
                 }
             })
 
-            return updateIncident;
+            return closedIncident;
         } catch (error) {
-            console.log(error)
             return this.#response = false;
         }
     }
